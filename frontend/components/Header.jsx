@@ -5,9 +5,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Cookie, Refrigerator } from 'lucide-react'
 import UserDropdown from './UserDropdown'
+import { currentUser } from '@clerk/nextjs/server'
 
 const Header = async() => {
-  const user = null;
+  const user = await currentUser();
+  
   return (
     <header className="fixed top-0 w-full border-b border-stone-200 bg-stone-50/80 backdrop-blur-md z-50 supports-backdrop-filter:bg-stone-50/60">
       <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
