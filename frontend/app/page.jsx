@@ -7,7 +7,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { SITE_STATS, FEATURES, HOW_IT_WORKS_STEPS } from "@/lib/data";
 import PricingSection from "@/components/PricingSection";
-import { SignUpButton } from "@clerk/nextjs";
 
 export default async function LandingPage() {
   const {has} = await auth();
