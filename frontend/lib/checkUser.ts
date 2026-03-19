@@ -102,8 +102,8 @@ export const checkUser = async () => {
 
     const newUser = await newUserResponse.json();
     return newUser;
-  } catch (error) {
-    console.error("❌ Error in checkUser:", error.message);
+  } catch (error: unknown) {
+    console.error("❌ Error in checkUser:", error instanceof Error ? error.message : error);
     return null;
   }
 };

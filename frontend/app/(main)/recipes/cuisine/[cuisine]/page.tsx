@@ -6,7 +6,7 @@ import { getMealsByArea } from "@/actions/mealdb.actions";
 
 export default function CuisineRecipesPage() {
   const params = useParams();
-  const cuisine = params.cuisine;
+  const cuisine = params.cuisine as string;
 
   return (
     <RecipeGrid

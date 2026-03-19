@@ -6,13 +6,22 @@ import Link from "next/link";
 import useFetch from "@/hooks/use-fetch";
 import RecipeCard from "@/components/RecipeCard";
 
+interface RecipeGridProps {
+  type: string;
+  value: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fetchAction: (...args: any[]) => Promise<any>;
+  backLink?: string;
+}
+
 export default function RecipeGrid({
   type, // "category" or "cuisine"
   value, // actual category/cuisine name
   fetchAction, // server action to fetch meals
   backLink = "/dashboard",
-}) {
-  const { loading, data, fn: fetchMeals } = useFetch(fetchAction);
+}: RecipeGridProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { loading, data, fn: fetchMeals } = useFetch<{ meals: any[] }>(fetchAction);
 
   useEffect(() => {
     if (value) {

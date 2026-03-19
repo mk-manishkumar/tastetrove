@@ -6,7 +6,7 @@ import { getMealsByCategory } from "@/actions/mealdb.actions";
 
 export default function CategoryRecipesPage() {
   const params = useParams();
-  const category = params.category;
+  const category = params.category as string;
 
   return (
     <RecipeGrid

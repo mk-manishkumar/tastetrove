@@ -53,8 +53,8 @@ export const HOW_IT_WORKS_STEPS = [
 ];
 
 // Helper function for category emojis
-export function getCategoryEmoji(category) {
-  const emojiMap = {
+export function getCategoryEmoji(category: string): string {
+  const emojiMap: Record<string, string> = {
     Beef: "🥩",
     Chicken: "🍗",
     Dessert: "🍰",
@@ -74,8 +74,8 @@ export function getCategoryEmoji(category) {
 }
 
 // Helper function for country flags
-export function getCountryFlag(country) {
-  const emojiMap = {
+export function getCountryFlag(country: string): string {
+  const emojiMap: Record<string, string> = {
     American: "🗽",
     British: "👑",
     Canadian: "🍁",

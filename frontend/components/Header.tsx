@@ -9,8 +9,14 @@ import { currentUser } from '@clerk/nextjs/server'
 import { Badge } from './ui/badge'
 import PricingModal from './PricingModal'
 
+interface UserWithSubscription {
+  subscriptionTier?: string;
+  [key: string]: unknown;
+}
+
 const Header = async() => {
-  const user = await currentUser();
+  const clerkUser = await currentUser();
+  const user = clerkUser as typeof clerkUser & UserWithSubscription | null;
 
   return (
     <header className="fixed top-0 w-full border-b border-stone-200 bg-stone-50/80 backdrop-blur-md z-50 supports-backdrop-filter:bg-stone-50/60">
@@ -65,7 +71,7 @@ const Header = async() => {
         {/* Show the sign in and sign up buttons when the user is signed out */}
             <SignedOut>
                 <SignInButton mode="modal">
-                    <button variant="ghost" className="text-stone-600 hover:text-orange-600 hover:bg-orange-50 font-medium">
+                    <button className="text-stone-600 hover:text-orange-600 hover:bg-orange-50 font-medium">
                         Sign In
                     </button>
                 </SignInButton>

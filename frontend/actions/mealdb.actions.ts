@@ -13,9 +13,9 @@ export async function getRecipeOfTheDay() {
 
     const data = await response.json();
     return { success: true, recipe: data.meals[0] };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching recipe of the day:", error);
-    throw new Error(error.message || "Failed to load recipe");
+    throw new Error(error instanceof Error ? error.message : "Failed to load recipe");
   }
 }
 
@@ -30,9 +30,9 @@ export async function getCategories() {
 
     const data = await response.json();
     return { success: true, categories: data.meals || [] };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching categories:", error);
-    throw new Error(error.message || "Failed to load categories");
+    throw new Error(error instanceof Error ? error.message : "Failed to load categories");
   }
 }
 
@@ -47,14 +47,14 @@ export async function getAreas() {
 
     const data = await response.json();
     return { success: true, areas: data.meals || [] };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching areas:", error);
-    throw new Error(error.message || "Failed to load areas");
+    throw new Error(error instanceof Error ? error.message : "Failed to load areas");
   }
 }
 
 // Get meals by category
-export async function getMealsByCategory(category) {
+export async function getMealsByCategory(category: string) {
   try {
     const response = await fetch(`${MEALDB_BASE}/filter.php?c=${category}`, {
       next: { revalidate: 86400 }, // Cache for 24 hours
@@ -64,14 +64,14 @@ export async function getMealsByCategory(category) {
 
     const data = await response.json();
     return { success: true, meals: data.meals || [], category };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching meals by category:", error);
-    throw new Error(error.message || "Failed to load meals");
+    throw new Error(error instanceof Error ? error.message : "Failed to load meals");
   }
 }
 
 // Get meals by area
-export async function getMealsByArea(area) {
+export async function getMealsByArea(area: string) {
   try {
     const response = await fetch(`${MEALDB_BASE}/filter.php?a=${area}`, {
       next: { revalidate: 86400 }, // Cache for 24 hours
@@ -81,8 +81,8 @@ export async function getMealsByArea(area) {
 
     const data = await response.json();
     return { success: true, meals: data.meals || [], area };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching meals by area:", error);
-    throw new Error(error.message || "Failed to load meals");
+    throw new Error(error instanceof Error ? error.message : "Failed to load meals");
   }
 }

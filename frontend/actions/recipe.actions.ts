@@ -50,7 +50,7 @@ async function fetchRecipeImage(recipeName) {
 
     console.log("ℹ️ No Unsplash image found for:", recipeName);
     return "";
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("❌ Error fetching Unsplash image:", error);
     return "";
   }
@@ -278,9 +278,9 @@ Guidelines:
       isPro,
       message: "Recipe generated and saved successfully!",
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("❌ Error in getOrGenerateRecipe:", error);
-    throw new Error(error.message || "Failed to load recipe");
+    throw new Error(error instanceof Error ? error.message : "Failed");
   }
 }
 
@@ -347,9 +347,9 @@ export async function saveRecipeToCollection(formData) {
       savedRecipe: savedRecipe.data,
       message: "Recipe saved to your collection!",
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("❌ Error saving recipe to collection:", error);
-    throw new Error(error.message || "Failed to save recipe");
+    throw new Error((error instanceof Error ? error.message : "Failed to save recipe"));
   }
 }
 
@@ -406,9 +406,9 @@ export async function removeRecipeFromCollection(formData) {
       success: true,
       message: "Recipe removed from your collection",
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("❌ Error removing recipe from collection:", error);
-    throw new Error(error.message || "Failed to remove recipe");
+    throw new Error((error instanceof Error ? error.message : "Failed to remove recipe"));
   }
 }
 
@@ -499,9 +499,9 @@ Rules:
       recommendationsLimit: isPro ? "unlimited" : 5,
       message: `Found ${recipeSuggestions.length} recipes you can make!`,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("❌ Error in getRecipesByPantryIngredients:", error);
-    throw new Error(error.message || "Failed to get recipe suggestions");
+    throw new Error((error instanceof Error ? error.message : "Failed to get recipe suggestions"));
   }
 }
 
@@ -535,8 +535,8 @@ export async function getSavedRecipes() {
       recipes,
       count: recipes.length,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching saved recipes:", error);
-    throw new Error(error.message || "Failed to load saved recipes");
+    throw new Error((error instanceof Error ? error.message : "Failed to load saved recipes"));
   }
 }

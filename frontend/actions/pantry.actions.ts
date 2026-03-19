@@ -89,9 +89,9 @@ Rules:
       scansLimit: isPro ? "unlimited" : 10,
       message: `Found ${ingredients.length} ingredients!`,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error scanning pantry:", error);
-    throw new Error(error.message || "Failed to scan image");
+    throw new Error((error instanceof Error ? error.message : "Failed to scan image"));
   }
 }
 
@@ -136,9 +136,9 @@ export async function saveToPantry(formData) {
       savedItems,
       message: `Saved ${savedItems.length} items to your pantry!`,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error saving to pantry:", error);
-    throw new Error(error.message || "Failed to save items");
+    throw new Error((error instanceof Error ? error.message : "Failed to save items"));
   }
 }
 
@@ -182,9 +182,9 @@ export async function addPantryItemManually(formData) {
       item: data.data,
       message: "Item added successfully!",
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error adding item manually:", error);
-    throw new Error(error.message || "Failed to add item");
+    throw new Error((error instanceof Error ? error.message : "Failed to add item"));
   }
 }
 
@@ -212,9 +212,9 @@ export async function getPantryItems() {
       items: data.data || [],
       scansLimit: isPro ? "unlimited" : 10,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching pantry:", error);
-    throw new Error(error.message || "Failed to load pantry");
+    throw new Error((error instanceof Error ? error.message : "Failed to load pantry"));
   }
 }
 
@@ -239,9 +239,9 @@ export async function deletePantryItem(formData) {
       success: true,
       message: "Item removed from pantry",
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error deleting item:", error);
-    throw new Error(error.message || "Failed to delete item");
+    throw new Error((error instanceof Error ? error.message : "Failed to delete item"));
   }
 }
 
@@ -278,8 +278,8 @@ export async function updatePantryItem(formData) {
       item: data.data,
       message: "Item updated successfully",
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error updating item:", error);
-    throw new Error(error.message || "Failed to update item");
+    throw new Error((error instanceof Error ? error.message : "Failed to update item"));
   }
 }

@@ -8,7 +8,13 @@ import {Card,CardContent,CardDescription,CardFooter,CardHeader,CardTitle,
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
-export default function PricingSection({ subscriptionTier = "free" }) {
+interface PricingSectionProps {
+  subscriptionTier?: string;
+  isModal?: boolean;
+  onClose?: () => void;
+}
+
+export default function PricingSection({ subscriptionTier = "free" }: PricingSectionProps) {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-16">

@@ -273,13 +273,15 @@ function RecipeContent() {
 
               {/* Group by category */}
               {Object.entries(
-                recipe.ingredients.reduce((acc, ing) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                recipe.ingredients.reduce((acc: Record<string, any[]>, ing: any) => {
                   const cat = ing.category || "Other";
                   if (!acc[cat]) acc[cat] = [];
                   acc[cat].push(ing);
                   return acc;
-                }, {})
-              ).map(([category, items]) => (
+                }, {} as Record<string, any[]>)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ).map(([category, items]: [string, any[]]) => (
                 <div key={category} className="mb-6 last:mb-0">
                   <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wide mb-3">
                     {category}
