@@ -3,7 +3,6 @@
 import { checkUser } from "@/lib/checkUser";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -63,19 +62,20 @@ Rules:
       },
     ]);
 
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
     // Parse JSON response
     let ingredients;
     try {
       const cleanText = text
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
+        .replaceAll(/```json\n?/g, "")
+        .replaceAll(/```\n?/g, "")
         .trim();
       ingredients = JSON.parse(cleanText);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini response:", text);
+    } catch (parseError: unknown) {
+      const errorMessage = parseError instanceof Error ? parseError.message : "Unknown error";
+      console.error("Failed to parse Gemini response:", errorMessage, text);
       throw new Error("Failed to parse ingredients. Please try again.");
     }
 
@@ -91,7 +91,7 @@ Rules:
     };
   } catch (error: unknown) {
     console.error("Error scanning pantry:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to scan image"));
+    throw new Error(error instanceof Error ? error.message : "Failed to scan image");
   }
 }
 
@@ -138,7 +138,7 @@ export async function saveToPantry(formData) {
     };
   } catch (error: unknown) {
     console.error("Error saving to pantry:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to save items"));
+    throw new Error(error instanceof Error ? error.message : "Failed to save items");
   }
 }
 
@@ -184,7 +184,7 @@ export async function addPantryItemManually(formData) {
     };
   } catch (error: unknown) {
     console.error("Error adding item manually:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to add item"));
+    throw new Error(error instanceof Error ? error.message : "Failed to add item");
   }
 }
 
@@ -214,7 +214,7 @@ export async function getPantryItems() {
     };
   } catch (error: unknown) {
     console.error("Error fetching pantry:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to load pantry"));
+    throw new Error(error instanceof Error ? error.message : "Failed to load pantry");
   }
 }
 
@@ -241,7 +241,7 @@ export async function deletePantryItem(formData) {
     };
   } catch (error: unknown) {
     console.error("Error deleting item:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to delete item"));
+    throw new Error(error instanceof Error ? error.message : "Failed to delete item");
   }
 }
 
@@ -280,6 +280,6 @@ export async function updatePantryItem(formData) {
     };
   } catch (error: unknown) {
     console.error("Error updating item:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to update item"));
+    throw new Error(error instanceof Error ? error.message : "Failed to update item");
   }
 }

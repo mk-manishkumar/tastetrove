@@ -1,22 +1,22 @@
-import React from 'react'
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
-import { Button } from './ui/button'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Cookie, Refrigerator, Sparkles } from 'lucide-react'
-import UserDropdown from './UserDropdown'
-import { currentUser } from '@clerk/nextjs/server'
-import { Badge } from './ui/badge'
-import PricingModal from './PricingModal'
+import React from "react";
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
+import { Button } from "./ui/button";
+import Link from "next/link";
+import Image from "next/image";
+import { Cookie, Refrigerator, Sparkles } from "lucide-react";
+import UserDropdown from "./UserDropdown";
+import { currentUser } from "@clerk/nextjs/server";
+import { Badge } from "./ui/badge";
+import PricingModal from "./PricingModal";
 
 interface UserWithSubscription {
   subscriptionTier?: string;
   [key: string]: unknown;
 }
 
-const Header = async() => {
+const Header = async () => {
   const clerkUser = await currentUser();
-  const user = clerkUser as typeof clerkUser & UserWithSubscription | null;
+  const user = clerkUser as (typeof clerkUser & UserWithSubscription) | null;
 
   return (
     <header className="fixed top-0 w-full border-b border-stone-200 bg-stone-50/80 backdrop-blur-md z-50 supports-backdrop-filter:bg-stone-50/60">
@@ -32,6 +32,10 @@ const Header = async() => {
             <Cookie className="w-4 h-4" />
             My Recipes
           </Link>
+          <Link href="/recipes/ai-generator" className="hover:text-orange-600 transition-colors flex gap-1.5 items-center">
+            <Sparkles className="w-4 h-4" />
+            AI Generator
+          </Link>
           <Link href="/pantry" className="hover:text-orange-600 transition-colors flex gap-1.5 items-center">
             <Refrigerator className="w-4 h-4" />
             My Pantry
@@ -39,54 +43,35 @@ const Header = async() => {
         </div>
 
         {/* Auth buttons */}
-        <div className='flex items-center space-x-4'>
+        <div className="flex items-center space-x-4">
           {/* Show the user button when the user is signed in */}
-        <SignedIn>
-          {/* Pricing Modal with Built-in Trigger */}
+          <SignedIn>
+            {/* Pricing Modal with Built-in Trigger */}
             {user && (
               <PricingModal subscriptionTier={user.subscriptionTier}>
-                <Badge
-                  variant="outline"
-                  className={`flex h-8 px-3 gap-1.5 rounded-full text-xs font-semibold transition-all ${
-                    user.subscriptionTier === "pro"
-                      ? "bg-linear-to-r from-orange-600 to-amber-500 text-white border-none shadow-sm"
-                      : "bg-stone-200/50 text-stone-600 border-stone-200 cursor-pointer hover:bg-stone-300/50 hover:border-stone-300"
-                  }`}
-                >
-                  <Sparkles
-                    className={`h-3 w-3 ${
-                      user.subscriptionTier === "pro"
-                        ? "text-white fill-white/20"
-                        : "text-stone-500"
-                    }`}
-                  />
-                  <span>
-                    {user.subscriptionTier === "pro" ? "Pro Chef" : "Free Plan"}
-                  </span>
+                <Badge variant="outline" className={`flex h-8 px-3 gap-1.5 rounded-full text-xs font-semibold transition-all ${user.subscriptionTier === "pro" ? "bg-linear-to-r from-orange-600 to-amber-500 text-white border-none shadow-sm" : "bg-stone-200/50 text-stone-600 border-stone-200 cursor-pointer hover:bg-stone-300/50 hover:border-stone-300"}`}>
+                  <Sparkles className={`h-3 w-3 ${user.subscriptionTier === "pro" ? "text-white fill-white/20" : "text-stone-500"}`} />
+                  <span>{user.subscriptionTier === "pro" ? "Pro Chef" : "Free Plan"}</span>
                 </Badge>
               </PricingModal>
             )}
-          <UserDropdown />  
-        </SignedIn>
-        {/* Show the sign in and sign up buttons when the user is signed out */}
-            <SignedOut>
-                <SignInButton mode="modal">
-                    <button className="text-stone-600 hover:text-orange-600 hover:bg-orange-50 font-medium">
-                        Sign In
-                    </button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                    <Button variant="primary" className="rounded-full px-6">
-                        Get Started
-                    </Button>
-                </SignUpButton>
-            </SignedOut>
-        
+            <UserDropdown />
+          </SignedIn>
+          {/* Show the sign in and sign up buttons when the user is signed out */}
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="text-stone-600 hover:text-orange-600 hover:bg-orange-50 font-medium">Sign In</button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <Button variant="primary" className="rounded-full px-6">
+                Get Started
+              </Button>
+            </SignUpButton>
+          </SignedOut>
         </div>
-      
-        </nav>
+      </nav>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

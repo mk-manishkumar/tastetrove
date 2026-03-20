@@ -3,7 +3,6 @@
 import { checkUser } from "@/lib/checkUser";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -56,6 +55,102 @@ async function fetchRecipeImage(recipeName) {
   }
 }
 
+// Helper: Check if recipe exists in database
+async function checkRecipeExists(normalizedTitle: string, user: { id: string; subscriptionTier?: string }) {
+  const searchResponse = await fetch(`${STRAPI_URL}/api/recipes?filters[title][$eqi]=${encodeURIComponent(normalizedTitle)}&populate=*`, {
+    headers: {
+      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!searchResponse.ok) return null;
+
+  const searchData = await searchResponse.json();
+  if (!searchData.data || searchData.data.length === 0) return null;
+
+  // Check if user has saved this recipe
+  const savedRecipeResponse = await fetch(`${STRAPI_URL}/api/saved-recipes?filters[user][id][$eq]=${user.id}&filters[recipe][id][$eq]=${searchData.data[0].id}`, {
+    headers: {
+      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+    },
+    cache: "no-store",
+  });
+
+  let isSaved = false;
+  if (savedRecipeResponse.ok) {
+    const savedData = await savedRecipeResponse.json();
+    isSaved = savedData.data && savedData.data.length > 0;
+  }
+
+  return {
+    recipe: searchData.data[0],
+    isSaved,
+  };
+}
+
+// Helper: Validate and sanitize recipe data
+function validateRecipeData(recipeData: any): { category: string; cuisine: string } {
+  const validCategories = ["breakfast", "lunch", "dinner", "snack", "dessert"];
+  const category = validCategories.includes(recipeData.category?.toLowerCase()) ? recipeData.category.toLowerCase() : "dinner";
+
+  const validCuisines = ["italian", "chinese", "mexican", "indian", "american", "thai", "japanese", "mediterranean", "french", "korean", "vietnamese", "spanish", "greek", "turkish", "moroccan", "brazilian", "caribbean", "middle-eastern", "british", "german", "portuguese", "other"];
+  const cuisine = validCuisines.includes(recipeData.cuisine?.toLowerCase()) ? recipeData.cuisine.toLowerCase() : "other";
+
+  return { category, cuisine };
+}
+
+// Helper: Parse Gemini response
+function parseGeminiResponse(text: string): any {
+  const cleanText = text
+    .replaceAll(/```json\n?/g, "")
+    .replaceAll(/```\n?/g, "")
+    .trim();
+  return JSON.parse(cleanText);
+}
+
+// Helper: Save recipe to database
+async function saveRecipeToDB(normalizedTitle: string, recipeData: any, category: string, cuisine: string, imageUrl: string, user: { id: string }) {
+  const strapiRecipeData = {
+    data: {
+      title: normalizedTitle,
+      description: recipeData.description,
+      cuisine,
+      category,
+      ingredients: recipeData.ingredients,
+      instructions: recipeData.instructions,
+      prepTime: Number(recipeData.prepTime),
+      cookTime: Number(recipeData.cookTime),
+      servings: Number(recipeData.servings),
+      nutrition: recipeData.nutrition,
+      tips: recipeData.tips,
+      substitutions: recipeData.substitutions,
+      imageUrl: imageUrl || "",
+      isPublic: true,
+      author: user.id,
+    },
+  };
+
+  console.log("📤 Saving new recipe to database with title:", normalizedTitle);
+
+  const createRecipeResponse = await fetch(`${STRAPI_URL}/api/recipes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+    },
+    body: JSON.stringify(strapiRecipeData),
+  });
+
+  if (!createRecipeResponse.ok) {
+    const errorText = await createRecipeResponse.text();
+    console.error("❌ Failed to save recipe:", errorText);
+    throw new Error("Failed to save recipe to database");
+  }
+
+  return await createRecipeResponse.json();
+}
+
 // Get or generate recipe details
 export async function getOrGenerateRecipe(formData) {
   try {
@@ -75,44 +170,19 @@ export async function getOrGenerateRecipe(formData) {
 
     const isPro = user.subscriptionTier === "pro";
 
-    // Step 1: Check if recipe already exists in DB (case-insensitive search)
-    const searchResponse = await fetch(`${STRAPI_URL}/api/recipes?filters[title][$eqi]=${encodeURIComponent(normalizedTitle)}&populate=*`, {
-      headers: {
-        Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-      },
-      cache: "no-store",
-    });
-
-    if (searchResponse.ok) {
-      const searchData = await searchResponse.json();
-
-      if (searchData.data && searchData.data.length > 0) {
-        console.log("✅ Recipe found in database:", searchData.data[0].id);
-
-        // Check if user has saved this recipe
-        const savedRecipeResponse = await fetch(`${STRAPI_URL}/api/saved-recipes?filters[user][id][$eq]=${user.id}&filters[recipe][id][$eq]=${searchData.data[0].id}`, {
-          headers: {
-            Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-          },
-          cache: "no-store",
-        });
-
-        let isSaved = false;
-        if (savedRecipeResponse.ok) {
-          const savedData = await savedRecipeResponse.json();
-          isSaved = savedData.data && savedData.data.length > 0;
-        }
-
-        return {
-          success: true,
-          recipe: searchData.data[0],
-          recipeId: searchData.data[0].id,
-          isSaved: isSaved,
-          fromDatabase: true,
-          isPro,
-          message: "Recipe loaded from database",
-        };
-      }
+    // Step 1: Check if recipe already exists in DB
+    const existingRecipe = await checkRecipeExists(normalizedTitle, user);
+    if (existingRecipe) {
+      console.log("✅ Recipe found in database:", existingRecipe.recipe.id);
+      return {
+        success: true,
+        recipe: existingRecipe.recipe,
+        recipeId: existingRecipe.recipe.id,
+        isSaved: existingRecipe.isSaved,
+        fromDatabase: true,
+        isPro,
+        message: "Recipe loaded from database",
+      };
     }
 
     // Step 2: Recipe doesn't exist, generate with Gemini
@@ -190,76 +260,31 @@ Guidelines:
 `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
     // Parse JSON response
     let recipeData;
     try {
-      const cleanText = text
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim();
-      recipeData = JSON.parse(cleanText);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini response:", text);
+      recipeData = parseGeminiResponse(text);
+    } catch (parseError: unknown) {
+      const errorMessage = parseError instanceof Error ? parseError.message : "Unknown error";
+      console.error("Failed to parse Gemini response:", errorMessage, text);
       throw new Error("Failed to generate recipe. Please try again.");
     }
 
     // FORCE the title to be our normalized version
     recipeData.title = normalizedTitle;
 
-    // Validate and sanitize category
-    const validCategories = ["breakfast", "lunch", "dinner", "snack", "dessert"];
-    const category = validCategories.includes(recipeData.category?.toLowerCase()) ? recipeData.category.toLowerCase() : "dinner";
-
-    // Validate and sanitize cuisine
-    const validCuisines = ["italian", "chinese", "mexican", "indian", "american", "thai", "japanese", "mediterranean", "french", "korean", "vietnamese", "spanish", "greek", "turkish", "moroccan", "brazilian", "caribbean", "middle-eastern", "british", "german", "portuguese", "other"];
-    const cuisine = validCuisines.includes(recipeData.cuisine?.toLowerCase()) ? recipeData.cuisine.toLowerCase() : "other";
+    // Validate and sanitize category and cuisine
+    const { category, cuisine } = validateRecipeData(recipeData);
 
     // Step 3: Fetch image from Unsplash
     console.log("🖼️ Fetching image from Unsplash...");
     const imageUrl = await fetchRecipeImage(normalizedTitle);
 
     // Step 4: Save generated recipe to database
-    const strapiRecipeData = {
-      data: {
-        title: normalizedTitle,
-        description: recipeData.description,
-        cuisine,
-        category,
-        ingredients: recipeData.ingredients,
-        instructions: recipeData.instructions,
-        prepTime: Number(recipeData.prepTime),
-        cookTime: Number(recipeData.cookTime),
-        servings: Number(recipeData.servings),
-        nutrition: recipeData.nutrition,
-        tips: recipeData.tips,
-        substitutions: recipeData.substitutions,
-        imageUrl: imageUrl || "",
-        isPublic: true,
-        author: user.id,
-      },
-    };
-
-    console.log("📤 Saving new recipe to database with title:", normalizedTitle);
-
-    const createRecipeResponse = await fetch(`${STRAPI_URL}/api/recipes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-      },
-      body: JSON.stringify(strapiRecipeData),
-    });
-
-    if (!createRecipeResponse.ok) {
-      const errorText = await createRecipeResponse.text();
-      console.error("❌ Failed to save recipe:", errorText);
-      throw new Error("Failed to save recipe to database");
-    }
-
-    const createdRecipe = await createRecipeResponse.json();
+    const createdRecipe = await saveRecipeToDB(normalizedTitle, recipeData, category, cuisine, imageUrl, user);
     console.log("✅ Recipe saved to database:", createdRecipe.data.id);
 
     return {
@@ -280,7 +305,8 @@ Guidelines:
     };
   } catch (error: unknown) {
     console.error("❌ Error in getOrGenerateRecipe:", error);
-    throw new Error(error instanceof Error ? error.message : "Failed");
+    const errorMessage = error instanceof Error ? error.message : "Failed to generate recipe";
+    throw new Error(errorMessage);
   }
 }
 
@@ -349,7 +375,7 @@ export async function saveRecipeToCollection(formData) {
     };
   } catch (error: unknown) {
     console.error("❌ Error saving recipe to collection:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to save recipe"));
+    throw new Error(error instanceof Error ? error.message : "Failed to save recipe");
   }
 }
 
@@ -408,7 +434,7 @@ export async function removeRecipeFromCollection(formData) {
     };
   } catch (error: unknown) {
     console.error("❌ Error removing recipe from collection:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to remove recipe"));
+    throw new Error(error instanceof Error ? error.message : "Failed to remove recipe");
   }
 }
 
@@ -477,18 +503,15 @@ Rules:
 `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
     let recipeSuggestions;
     try {
-      const cleanText = text
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim();
-      recipeSuggestions = JSON.parse(cleanText);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini response:", text);
+      recipeSuggestions = parseGeminiResponse(text);
+    } catch (parseError: unknown) {
+      const errorMessage = parseError instanceof Error ? parseError.message : "Unknown error";
+      console.error("Failed to parse Gemini response:", errorMessage, text);
       throw new Error("Failed to generate recipe suggestions. Please try again.");
     }
 
@@ -501,7 +524,7 @@ Rules:
     };
   } catch (error: unknown) {
     console.error("❌ Error in getRecipesByPantryIngredients:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to get recipe suggestions"));
+    throw new Error(error instanceof Error ? error.message : "Failed to get recipe suggestions");
   }
 }
 
@@ -537,6 +560,6 @@ export async function getSavedRecipes() {
     };
   } catch (error: unknown) {
     console.error("Error fetching saved recipes:", error);
-    throw new Error((error instanceof Error ? error.message : "Failed to load saved recipes"));
+    throw new Error(error instanceof Error ? error.message : "Failed to load saved recipes");
   }
 }
