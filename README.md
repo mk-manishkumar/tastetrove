@@ -4,20 +4,63 @@ A comprehensive recipe and pantry management application that helps users discov
 
 ## 🌐 Deployment
 
-The application is deployed on [Vercel](https://vercel.com/).
+The application is fully deployed and ready for production:
 
-**Live Demo**: [TasteTrove Live](https://tastetrove.vercel.app/)
+- **Frontend**: [Vercel](https://vercel.com/)
+- **Backend**: [Strapi Cloud](https://www.strapi.io/cloud)
 
-### Deployment on Vercel
+**Live Demo**: [TasteTrove Live](https://tastetrove-mk.vercel.app/)
+
+### Frontend Deployment on Vercel
 
 The frontend is automatically deployed to Vercel whenever changes are pushed to the main branch. To deploy your own instance:
 
 1. Create a Vercel account at [vercel.com](https://vercel.com/)
 2. Import your GitHub repository
-3. Configure environment variables in Vercel dashboard
-4. Deploy with one click
+3. Set the root directory to `./frontend`
+4. Configure environment variables:
+   - `NEXT_PUBLIC_API_URL` - Your Strapi Cloud backend URL
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   - `CLERK_SECRET_KEY`
+   - `GEMINI_API_KEY`
+   - `UNSPLASH_ACCESS_KEY`
+5. Deploy with one click
 
 For detailed deployment instructions, see [Vercel Deployment Guide](https://vercel.com/docs/concepts/deployments/overview).
+
+### Backend Deployment on Strapi Cloud
+
+**Current Status**: ✅ **Deployed on Strapi Cloud**
+
+The backend (Node.js 24, Region: Asia Southeast) is hosted on Strapi Cloud with automatic scaling and managed PostgreSQL database.
+
+To deploy your own Strapi Cloud instance:
+
+1. Go to [Strapi Cloud](https://cloud.strapi.io)
+2. Sign in with GitHub
+3. Click "Create a new project"
+4. Select your repository
+5. Configure:
+   - **Project Name**: tastetrove (or your project name)
+   - **Node.js Version**: 24 (recommended)
+   - **Region**: Choose your preferred region (Asia Southeast recommended)
+6. Strapi Cloud automatically provisions:
+   - PostgreSQL database
+   - Managed hosting
+   - SSL certificate
+   - Auto-scaling
+7. Once deployed, get your backend URL from the Strapi Cloud dashboard
+8. Update your frontend `NEXT_PUBLIC_API_URL` with the Strapi Cloud URL
+
+**Benefits of Strapi Cloud**:
+- ✅ Automatic database backups
+- ✅ Built-in CDN for file uploads
+- ✅ One-click deployments
+- ✅ Automatic SSL certificates
+- ✅ Production monitoring
+- ✅ Environment management
+
+For detailed instructions, see [Strapi Cloud Documentation](https://docs.strapi.io/cloud/getting-started).
 
 ## 🌟 Features
 
